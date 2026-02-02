@@ -35,7 +35,7 @@ cors_origins = os.getenv("CORS_ORIGINS", "").strip()
 if cors_origins:
     allowed_origins = [item.strip() for item in cors_origins.split(",") if item.strip()]
 else:
-    allowed_origins = ["https://ar.bbn.biz.id", "http://ar.bbn.biz.id"]
+    allowed_origins = ["https://ar.cisan.id", "http://ar.cisan.id"]
 
 app.add_middleware(
     CORSMiddleware,

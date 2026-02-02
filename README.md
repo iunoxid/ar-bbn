@@ -103,7 +103,7 @@ sudo systemctl status invoice-matcher-api
 ```
 cd /var/www/invoice-matcher/frontend
 npm install
-echo "VITE_API_BASE=https://ar.bbn.biz.id" > .env
+echo "VITE_API_BASE=https://ar.cisan.id" > .env
 npm run build
 ```
 
@@ -115,7 +115,7 @@ Isi:
 ```
 server {
     listen 80;
-    server_name ar.bbn.biz.id;
+    server_name ar.cisan.id;
 
     root /var/www/invoice-matcher/frontend/dist;
     index index.html;
@@ -138,7 +138,7 @@ Tambahkan server block untuk API subdomain:
 ```
 server {
     listen 80;
-    server_name api.ar.bbn.biz.id;
+    server_name api.ar.cisan.id;
 
     location / {
         proxy_pass http://127.0.0.1:9001;
@@ -160,5 +160,5 @@ sudo systemctl reload nginx
 ### 6) (Opsional) HTTPS dengan Let's Encrypt
 ```
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d ar.bbn.biz.id
+sudo certbot --nginx -d ar.cisan.id
 ```

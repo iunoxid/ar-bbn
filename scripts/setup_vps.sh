@@ -2,8 +2,8 @@
 set -euo pipefail
 
 DEFAULT_APP_DIR="/var/www/ar-bbn"
-DEFAULT_DOMAIN="ar.bbn.biz.id"
-DEFAULT_API_DOMAIN="api.ar.bbn.biz.id"
+DEFAULT_DOMAIN="ar.cisan.id"
+DEFAULT_API_DOMAIN="api.ar.cisan.id"
 DEFAULT_SERVICE_NAME="ar-bbn-api"
 
 read -r -p "Masukkan path project [${DEFAULT_APP_DIR}]: " APP_DIR

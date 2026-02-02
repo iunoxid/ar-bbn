@@ -463,7 +463,8 @@ export default function App() {
           </ol>
         </section>
         <footer className="footer">
-          © 2026 Syahbandi — syahbandi.my.id
+          <div>CISAN AR · Internal System</div>
+          <div>Central Integrated Services &amp; Application Network</div>
         </footer>
       </main>
     </div>

@@ -19,5 +19,5 @@ sudo bash scripts/deploy_vps.sh
 ## Notes
 - Service name: ar-bbn-api
 - App path: /var/www/ar-bbn
-- Domain (FE): ar.bbn.biz.id
-- Domain (API): api.ar.bbn.biz.id
+- Domain (FE): ar.cisan.id
+- Domain (API): api.ar.cisan.id
