@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+.env
+backend/.env
+frontend/.env
+uploads/
+outputs/
+*.xlsx
+backend/uploads/
+backend/outputs/
+backend/venv/
+frontend/node_modules/
+frontend/dist/
