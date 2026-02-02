@@ -51,6 +51,11 @@ if [[ ! -f .env ]]; then
 fi
 npm run build
 
+# Ensure runtime dirs exist with correct permissions
+mkdir -p "$APP_DIR/backend/uploads" "$APP_DIR/backend/outputs"
+chown -R www-data:www-data "$APP_DIR/backend/uploads" "$APP_DIR/backend/outputs"
+chmod -R 775 "$APP_DIR/backend/uploads" "$APP_DIR/backend/outputs"
+
 # systemd service
 cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
@@ -85,6 +90,9 @@ server {
     }
 
     location /api/ {
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 300s;
         proxy_pass http://127.0.0.1:${PORT_VALUE};
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -100,6 +108,9 @@ server {
     server_name ${API_DOMAIN};
 
     location / {
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 300s;
         proxy_pass http://127.0.0.1:${PORT_VALUE};
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;

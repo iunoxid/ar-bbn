@@ -22,6 +22,11 @@ git pull
 source venv/bin/activate
 pip install -r backend/requirements.txt
 
+# Ensure runtime dirs exist with correct permissions
+mkdir -p "$APP_DIR/backend/uploads" "$APP_DIR/backend/outputs"
+chown -R www-data:www-data "$APP_DIR/backend/uploads" "$APP_DIR/backend/outputs"
+chmod -R 775 "$APP_DIR/backend/uploads" "$APP_DIR/backend/outputs"
+
 # Frontend build
 cd "$APP_DIR/frontend"
 if [[ ! -f .env ]]; then
