@@ -38,6 +38,10 @@ pip install -r backend/requirements.txt
 if [[ ! -f backend/.env ]]; then
   cp backend/.env.example backend/.env
 fi
+PORT_VALUE=$(grep -E '^PORT=' backend/.env | tail -n 1 | cut -d '=' -f2 | tr -d '\r')
+if [[ -z "$PORT_VALUE" ]]; then
+  PORT_VALUE="9001"
+fi
 
 # Frontend build
 cd "$APP_DIR/frontend"
@@ -81,7 +85,7 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://127.0.0.1:\${PORT};
+        proxy_pass http://127.0.0.1:${PORT_VALUE};
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -96,7 +100,7 @@ server {
     server_name ${API_DOMAIN};
 
     location / {
-        proxy_pass http://127.0.0.1:\${PORT};
+        proxy_pass http://127.0.0.1:${PORT_VALUE};
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
