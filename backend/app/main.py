@@ -31,9 +31,15 @@ FILENAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 app = FastAPI(title="Cari Piutang API")
 
+cors_origins = os.getenv("CORS_ORIGINS", "").strip()
+if cors_origins:
+    allowed_origins = [item.strip() for item in cors_origins.split(",") if item.strip()]
+else:
+    allowed_origins = ["https://ar.bbn.biz.id", "http://ar.bbn.biz.id"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
