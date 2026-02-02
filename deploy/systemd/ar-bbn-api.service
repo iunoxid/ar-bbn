@@ -1,0 +1,15 @@
+[Unit]
+Description=AR BBN API
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/var/www/ar-bbn
+EnvironmentFile=/var/www/ar-bbn/backend/.env
+ExecStartPre=/bin/mkdir -p /var/www/ar-bbn/backend/uploads /var/www/ar-bbn/backend/outputs
+ExecStartPre=/bin/chown -R www-data:www-data /var/www/ar-bbn/backend/uploads /var/www/ar-bbn/backend/outputs
+ExecStart=/var/www/ar-bbn/venv/bin/uvicorn backend.app.main:app --host 127.0.0.1 --port ${PORT}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

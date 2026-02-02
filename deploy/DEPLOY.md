@@ -21,3 +21,8 @@ sudo bash scripts/deploy_vps.sh
 - App path: /var/www/ar-bbn
 - Domain (FE): ar.cisan.id
 - Domain (API): api.ar.cisan.id
+
+## Systemd template
+Use the template at `deploy/systemd/ar-bbn-api.service` to ensure
+`uploads/` and `outputs/` are created on service start (prevents 500s
+when dirs are missing or permissions are wrong).
