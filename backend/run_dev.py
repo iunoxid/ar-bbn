@@ -15,4 +15,5 @@ try:
 except ValueError:
     raise SystemExit(f"Invalid PORT value: {port}")
 
-uvicorn.run("backend.app.main:app", host=host, port=port_int, reload=True)
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host=host, port=port_int, reload=True)

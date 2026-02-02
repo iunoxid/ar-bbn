@@ -145,6 +145,8 @@ const removeDigitFromRaw = (rawValue, displayValue, cursorIndex, direction) => {
 export default function App() {
   const [file, setFile] = useState(null);
   const [targetsRaw, setTargetsRaw] = useState("");
+  const [targetInput, setTargetInput] = useState("");
+  const [targetTokens, setTargetTokens] = useState([]);
   const [tolerance, setTolerance] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -154,10 +156,52 @@ export default function App() {
 
   const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
+  const clearFile = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const canSubmit = useMemo(() => {
     const normalized = normalizeTargets(targetsRaw);
     return file && normalized && Number(normalized.split(",")[0]) > 0;
   }, [file, targetsRaw]);
+
+  const commitTargets = (rawValue) => {
+    const parts = String(rawValue || "")
+      .split(",")
+      .map((part) => part.replace(/\D/g, ""))
+      .filter((part) => part.length > 0);
+    if (parts.length === 0) return;
+    const newTokens = parts.map((value) => ({
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      value
+    }));
+    setTargetTokens((prev) => [...prev, ...newTokens]);
+    setTargetsRaw((prev) => {
+      const prefix = prev ? `${prev},` : "";
+      return `${prefix}${parts.join(",")}`;
+    });
+    setTargetInput("");
+  };
+
+  const removeTargetById = (id) => {
+    setTargetTokens((prev) => {
+      const next = prev.filter((token) => token.id !== id);
+      setTargetsRaw(next.map((token) => token.value).join(","));
+      return next;
+    });
+  };
+
+  const removeLastTarget = () => {
+    setTargetTokens((prev) => {
+      if (prev.length === 0) return prev;
+      const next = prev.slice(0, -1);
+      setTargetsRaw(next.map((token) => token.value).join(","));
+      return next;
+    });
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -201,6 +245,8 @@ export default function App() {
       setLoading(false);
       setFile(null);
       setTargetsRaw("");
+      setTargetInput("");
+      setTargetTokens([]);
       setTolerance("");
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -224,173 +270,196 @@ export default function App() {
         <section className="card">
           <form className="form" onSubmit={handleSubmit}>
             <fieldset className="fieldset" disabled={loading}>
-            <label className="field">
-              <span>File Excel (.xlsx)</span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx"
-                onChange={(event) => {
-                  const selected = event.target.files?.[0] || null;
-                  if (selected) {
-                    setFile(selected);
-                  }
-                }}
-              />
+            <div className="field">
+              <label className="label" htmlFor="file-input">
+                File Excel (.xlsx)
+              </label>
+              <span className="helper">
+                Unggah file invoice dalam format .xlsx.
+              </span>
               {file ? (
-                <span className="file-name">Selected: {file.name}</span>
-              ) : null}
+                <div
+                  className="file-status"
+                  onClick={() => {
+                    if (fileInputRef.current) {
+                      fileInputRef.current.click();
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="file-status__left">
+                    <div className="file-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" role="img">
+                        <path
+                          d="M6 3h7l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm7 1.5V9h4.5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M8 13h8M8 16h8M8 19h5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    <span className="file-status__name">{file.name}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="file-remove"
+                    aria-label="Hapus file"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      clearFile();
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="file-input">
+                  <div className="file-input__inner">
+                    <div className="file-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" role="img">
+                        <path
+                          d="M6 3h7l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm7 1.5V9h4.5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M8 13h8M8 16h8M8 19h5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    <div className="file-text">
+                      <span className="file-title">Pilih file Excel</span>
+                      <span className="file-subtitle">Format .xlsx, maksimal 10MB</span>
+                    </div>
+                  </div>
+                  <input
+                    id="file-input"
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx"
+                    onChange={(event) => {
+                      const selected = event.target.files?.[0] || null;
+                      if (selected) {
+                        setFile(selected);
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <label className="field">
+              <span className="label">Target nominal</span>
+              <span className="helper">Pisahkan lebih dari satu target dengan koma.</span>
+              <div
+                className="target-input"
+                onClick={() => targetsInputRef.current?.focus()}
+              >
+                {targetTokens.map((token) => (
+                  <span
+                    className="target-chip"
+                    key={token.id}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      targetsInputRef.current?.focus();
+                    }}
+                  >
+                    {formatDigits(token.value)}
+                      <button
+                        type="button"
+                        className="target-remove"
+                        aria-label="Hapus nominal"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          removeTargetById(token.id);
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                ))}
+                <input
+                  ref={targetsInputRef}
+                  className="target-input__field"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder={
+                    targetTokens.length === 0 && !targetInput
+                      ? "Contoh: 1.000.000, 2.000.000"
+                      : ""
+                  }
+                  value={formatDigits(targetInput)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === ",") {
+                      event.preventDefault();
+                      commitTargets(targetInput);
+                      return;
+                    }
+                    if (event.key === "Tab") {
+                      if (targetInput) {
+                        commitTargets(targetInput);
+                      }
+                      return;
+                    }
+                    if (event.key === "Backspace" && !targetInput) {
+                      event.preventDefault();
+                      removeLastTarget();
+                    }
+                  }}
+                  onChange={(event) => {
+                    const cleaned = event.target.value.replace(/\D/g, "");
+                    setTargetInput(cleaned);
+                  }}
+                  onPaste={(event) => {
+                    const text = event.clipboardData.getData("text");
+                    if (text.includes(",")) {
+                      event.preventDefault();
+                      commitTargets(text);
+                      return;
+                    }
+                    const cleaned = text.replace(/\D/g, "");
+                    setTargetInput(cleaned);
+                  }}
+                  onBlur={() => {
+                    if (targetInput) {
+                      commitTargets(targetInput);
+                    }
+                  }}
+                />
+              </div>
             </label>
 
             <label className="field">
-              <span>Target nominal (pisahkan dengan koma)</span>
-              <input
-                ref={targetsInputRef}
-                type="text"
-                inputMode="numeric"
-                placeholder="Contoh: 1.000.000, 2.000.000"
-                value={formatTargetsDisplay(targetsRaw)}
-                onKeyDown={(event) => {
-                  if (!targetsInputRef.current) return;
-                  if (event.defaultPrevented) return;
-                  const key = event.key;
-                  if (key === ",") {
-                    event.preventDefault();
-                    const displayValue = event.currentTarget.value;
-                    const cursorIndex = event.currentTarget.selectionStart ?? 0;
-                    const digitsBefore = countDigits(
-                      displayValue.slice(0, cursorIndex)
-                    );
-                    const newRaw = insertCommaAtDigits(targetsRaw, digitsBefore);
-                    const newDisplay = formatTargetsDisplay(newRaw);
-                    const baseCursor = positionAfterDigits(
-                      newDisplay,
-                      digitsBefore
-                    );
-                    let commaIndex = newDisplay.indexOf(",", baseCursor);
-                    if (commaIndex === -1 && baseCursor > 0) {
-                      commaIndex = newDisplay.indexOf(",", baseCursor - 1);
-                    }
-                    const newCursor =
-                      commaIndex >= 0
-                        ? Math.min(commaIndex + 2, newDisplay.length)
-                        : baseCursor;
-                    setTargetsRaw(newRaw);
-                    requestAnimationFrame(() => {
-                      targetsInputRef.current?.setSelectionRange(
-                        newCursor,
-                        newCursor
-                      );
-                    });
-                    return;
-                  }
-                  if (key !== "Backspace" && key !== "Delete") return;
-                  const start = event.currentTarget.selectionStart ?? 0;
-                  const end = event.currentTarget.selectionEnd ?? 0;
-                  if (start !== end) return;
-                  const displayValue = event.currentTarget.value;
-                  const charToCheck =
-                    key === "Backspace"
-                      ? displayValue[start - 1]
-                      : displayValue[start];
-                  if (!charToCheck || /\d/.test(charToCheck)) {
-                    return;
-                  }
-                  const isSpace = charToCheck === " ";
-                  const isComma = charToCheck === ",";
-                  if (isSpace || isComma) {
-                    event.preventDefault();
-                    const commaPos =
-                      key === "Backspace"
-                        ? isSpace
-                          ? start - 2
-                          : start - 1
-                        : isSpace
-                          ? start - 1
-                          : start;
-                    if (commaPos >= 0) {
-                      const commasBefore = (displayValue
-                        .slice(0, commaPos)
-                        .match(/,/g) || []).length;
-                      const newRaw = removeCommaAtIndex(targetsRaw, commasBefore);
-                      const digitsBefore = countDigits(
-                        displayValue.slice(0, commaPos)
-                      );
-                      const newDisplay = formatTargetsDisplay(newRaw);
-                      const newCursor = positionAfterDigits(
-                        newDisplay,
-                        digitsBefore
-                      );
-                      setTargetsRaw(newRaw);
-                      requestAnimationFrame(() => {
-                        targetsInputRef.current?.setSelectionRange(
-                          newCursor,
-                          newCursor
-                        );
-                      });
-                    }
-                    return;
-                  }
-                  event.preventDefault();
-                  const newRaw = removeDigitFromRaw(
-                    targetsRaw,
-                    displayValue,
-                    start,
-                    key === "Backspace" ? "back" : "forward"
-                  );
-                  const digitsBefore = countDigits(
-                    displayValue.slice(0, start)
-                  );
-                  const newDisplay = formatTargetsDisplay(newRaw);
-                  const newCursorDigits =
-                    key === "Backspace"
-                      ? Math.max(digitsBefore - 1, 0)
-                      : digitsBefore;
-                  const newCursor = positionAfterDigits(
-                    newDisplay,
-                    newCursorDigits
-                  );
-                  let adjustedCursor = newCursor;
-                  if (newDisplay[adjustedCursor] === ",") {
-                    adjustedCursor = Math.min(adjustedCursor + 2, newDisplay.length);
-                  }
-                  setTargetsRaw(newRaw);
-                  requestAnimationFrame(() => {
-                    targetsInputRef.current?.setSelectionRange(
-                      adjustedCursor,
-                      adjustedCursor
-                    );
-                  });
-                }}
-                onChange={(event) => {
-                  const rawValue = event.target.value;
-                  const cursorIndex = event.target.selectionStart ?? 0;
-                  const digitsBefore = countDigits(
-                    rawValue.slice(0, cursorIndex)
-                  );
-                  const cleaned = rawValue.replace(/[^\d,]/g, "");
-                  const newDisplay = formatTargetsDisplay(cleaned);
-                  const newCursor = positionAfterDigits(
-                    newDisplay,
-                    digitsBefore
-                  );
-                  let adjustedCursor = newCursor;
-                  if (newDisplay[adjustedCursor] === ",") {
-                    adjustedCursor = Math.min(adjustedCursor + 2, newDisplay.length);
-                  }
-                  setTargetsRaw(cleaned);
-                  requestAnimationFrame(() => {
-                    targetsInputRef.current?.setSelectionRange(
-                      adjustedCursor,
-                      adjustedCursor
-                    );
-                  });
-                }}
-              />
-            </label>
-
-            <label className="field">
-              <span>Toleransi (opsional)</span>
+              <span className="label">Toleransi (opsional)</span>
+              <span className="helper">Default {formatNumber(DEFAULT_TOLERANCE)}.</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -401,7 +470,7 @@ export default function App() {
             </label>
 
             <div className="actions">
-              <button type="submit" disabled={!canSubmit || loading}>
+              <button className="primary" type="submit" disabled={!canSubmit || loading}>
                 {loading ? (
                   <>
                     <span className="spinner" aria-hidden="true" />
@@ -411,19 +480,6 @@ export default function App() {
                   "Proses file"
                 )}
               </button>
-              <button
-                type="button"
-                className="secondary"
-                disabled={!file || loading}
-                onClick={() => {
-                  setFile(null);
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                  }
-                }}
-              >
-                Hapus file
-              </button>
             </div>
             </fieldset>
           </form>
@@ -431,21 +487,42 @@ export default function App() {
           {error ? <p className="error">{error}</p> : null}
 
           {result ? (
-            <div className="result">
+            <div className="result-card">
               {result.found ? (
-                <>
-                  <p>
-                    Ditemukan <strong>{result.total_rows}</strong> baris cocok.
-                  </p>
+                <div className="result-row">
+                  <div className="result-status">
+                    <span className="result-label">Ditemukan</span>
+                    <strong className="result-count">{result.total_rows}</strong>
+                    <span className="result-label">baris cocok.</span>
+                  </div>
                   <a
                     className="download"
                     href={joinUrl(apiBase, result.download_url)}
                   >
+                    <span className="download-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" role="img">
+                        <path
+                          d="M12 4v10m0 0l4-4m-4 4l-4-4"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M5 20h14"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
                     Unduh file hasil
                   </a>
-                </>
+                </div>
               ) : (
-                <p>Tidak ada kombinasi yang cocok.</p>
+                <p className="result-empty">Tidak ada kombinasi yang cocok.</p>
               )}
             </div>
           ) : null}
