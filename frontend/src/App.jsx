@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 
-const DEFAULT_TOLERANCE = 100;
+const DEFAULT_TOLERANCE = 500;
 
 const joinUrl = (base, path) => {
   if (!path) return "";
@@ -423,12 +423,6 @@ export default function App() {
                       commitTargets(targetInput);
                       return;
                     }
-                    if (event.key === "Tab") {
-                      if (targetInput) {
-                        commitTargets(targetInput);
-                      }
-                      return;
-                    }
                     if (event.key === "Backspace" && !targetInput) {
                       event.preventDefault();
                       removeLastTarget();
@@ -447,11 +441,6 @@ export default function App() {
                     }
                     const cleaned = text.replace(/\D/g, "");
                     setTargetInput(cleaned);
-                  }}
-                  onBlur={() => {
-                    if (targetInput) {
-                      commitTargets(targetInput);
-                    }
                   }}
                 />
               </div>
