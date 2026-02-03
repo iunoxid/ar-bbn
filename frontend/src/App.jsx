@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const DEFAULT_TOLERANCE = 500;
+const TARGETS_STORAGE_KEY = "ar-bbn.targets";
 
 const joinUrl = (base, path) => {
   if (!path) return "";
@@ -25,6 +26,15 @@ const normalizeTargets = (value) => {
     .map((part) => part.replace(/\D/g, ""))
     .filter((part) => part.length > 0)
     .join(",");
+};
+
+const buildTokensFromRaw = (rawValue) => {
+  const normalized = normalizeTargets(rawValue);
+  if (!normalized) return [];
+  return normalized.split(",").map((value) => ({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    value
+  }));
 };
 
 const positionAfterDigits = (value, digitsCount) => {
@@ -148,6 +158,8 @@ export default function App() {
   const [targetInput, setTargetInput] = useState("");
   const [targetTokens, setTargetTokens] = useState([]);
   const [tolerance, setTolerance] = useState("");
+  const [backendStatus, setBackendStatus] = useState("checking");
+  const [backendLatency, setBackendLatency] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
@@ -155,6 +167,75 @@ export default function App() {
   const targetsInputRef = useRef(null);
 
   const apiBase = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(TARGETS_STORAGE_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      const savedRaw = typeof parsed.targetsRaw === "string" ? parsed.targetsRaw : "";
+      const savedInput =
+        typeof parsed.targetInput === "string" ? parsed.targetInput : "";
+      if (savedRaw) {
+        setTargetsRaw(savedRaw);
+        setTargetTokens(buildTokensFromRaw(savedRaw));
+      }
+      if (savedInput) {
+        setTargetInput(savedInput);
+      }
+    } catch (err) {
+      window.localStorage.removeItem(TARGETS_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!targetsRaw && !targetInput) {
+      window.localStorage.removeItem(TARGETS_STORAGE_KEY);
+      return;
+    }
+    const payload = JSON.stringify({
+      targetsRaw,
+      targetInput
+    });
+    window.localStorage.setItem(TARGETS_STORAGE_KEY, payload);
+  }, [targetsRaw, targetInput]);
+
+  useEffect(() => {
+    let active = true;
+
+    const checkBackend = async () => {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 3000);
+      const startedAt = performance.now();
+      try {
+        const response = await fetch(joinUrl(apiBase, "/api/health"), {
+          signal: controller.signal
+        });
+        const endedAt = performance.now();
+        if (!active) return;
+        if (!response.ok) {
+          setBackendStatus("offline");
+          setBackendLatency(null);
+          return;
+        }
+        setBackendStatus("online");
+        setBackendLatency(Math.max(1, Math.round(endedAt - startedAt)));
+      } catch (err) {
+        if (!active) return;
+        setBackendStatus("offline");
+        setBackendLatency(null);
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    };
+
+    checkBackend();
+    const intervalId = window.setInterval(checkBackend, 10000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [apiBase]);
 
   const clearFile = () => {
     setFile(null);
@@ -167,6 +248,19 @@ export default function App() {
     const normalized = normalizeTargets(targetsRaw);
     return file && normalized && Number(normalized.split(",")[0]) > 0;
   }, [file, targetsRaw]);
+
+  const backendLabel = useMemo(() => {
+    if (backendStatus === "checking") {
+      return "Mengecek backend...";
+    }
+    if (backendStatus === "offline") {
+      return "Backend nonaktif";
+    }
+    if (backendLatency) {
+      return `Backend aktif · ${backendLatency}ms`;
+    }
+    return "Backend aktif";
+  }, [backendStatus, backendLatency]);
 
   const commitTargets = (rawValue) => {
     const parts = String(rawValue || "")
@@ -260,6 +354,12 @@ export default function App() {
       <main className="container">
         <header className="hero">
           <p className="badge">Invoice Matcher</p>
+          <div className="hero-meta">
+            <span className={`status-pill status-${backendStatus}`}>
+              <span className="status-dot" aria-hidden="true" />
+              {backendLabel}
+            </span>
+          </div>
           <h1>Temukan kombinasi invoice sesuai nominal target.</h1>
           <p className="subtitle">
             Unggah Excel, tentukan target, dan hasilkan file kombinasi siap

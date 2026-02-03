@@ -114,6 +114,11 @@ async def _shutdown() -> None:
         task.cancel()
 
 
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok"}
+
+
 @app.post("/api/process")
 async def process_file(
     file: UploadFile | None = File(None),
