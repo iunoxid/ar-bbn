@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime
 from itertools import combinations
 
@@ -120,7 +121,7 @@ def find_invoice_combinations(
         return None, 0
 
     timestamp = datetime.now().strftime("%d%m%Y_%H%M%S")
-    output_file = f"hasil_kombinasi_invoice_{timestamp}.xlsx"
+    output_file = f"hasil_kombinasi_invoice_{timestamp}_{uuid.uuid4().hex}.xlsx"
     if output_dir:
         output_file = os.path.join(output_dir, output_file)
 
@@ -146,7 +147,7 @@ def find_invoice_combinations_for_targets(
         return None, 0
 
     timestamp = datetime.now().strftime("%d%m%Y_%H%M%S")
-    output_file = f"hasil_kombinasi_invoice_{timestamp}.xlsx"
+    output_file = f"hasil_kombinasi_invoice_{timestamp}_{uuid.uuid4().hex}.xlsx"
     if output_dir:
         output_file = os.path.join(output_dir, output_file)
 

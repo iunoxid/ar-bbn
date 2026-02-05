@@ -4,6 +4,7 @@ import re
 import shutil
 import time
 import uuid
+import multiprocessing as mp
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -26,6 +27,7 @@ CLEANUP_TTL_SECONDS = int(os.getenv("CLEANUP_TTL_SECONDS", "3600"))
 CLEANUP_INTERVAL_SECONDS = int(
     os.getenv("CLEANUP_INTERVAL_SECONDS", str(CLEANUP_TTL_SECONDS))
 )
+PROCESS_TIMEOUT_SECONDS = int(os.getenv("PROCESS_TIMEOUT_SECONDS", "600"))
 
 FILENAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
@@ -44,6 +46,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def _run_with_timeout(func, args, timeout_seconds):
+    queue = mp.Queue()
+
+    def _worker(q, f, f_args):
+        try:
+            q.put(f(*f_args))
+        except Exception as exc:
+            q.put(exc)
+
+    proc = mp.Process(target=_worker, args=(queue, func, args))
+    proc.start()
+    proc.join(timeout_seconds)
+
+    if proc.is_alive():
+        proc.terminate()
+        proc.join()
+        raise TimeoutError("Processing timed out")
+
+    result = queue.get()
+    if isinstance(result, Exception):
+        raise result
+    return result
 
 
 def _cleanup_old_files(base_dir: Path, ttl_seconds: int) -> None:
@@ -175,12 +200,21 @@ async def process_file(
 
     try:
         output_file, total_rows = await asyncio.to_thread(
+            _run_with_timeout,
             find_invoice_combinations_for_targets,
-            str(upload_path),
-            target_values,
-            tolerance,
-            max_invoices,
-            str(OUTPUT_DIR),
+            (
+                str(upload_path),
+                target_values,
+                tolerance,
+                max_invoices,
+                str(OUTPUT_DIR),
+            ),
+            PROCESS_TIMEOUT_SECONDS,
+        )
+    except TimeoutError:
+        raise HTTPException(
+            status_code=504,
+            detail="Proses terlalu lama. Coba kurangi jumlah invoice atau target.",
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

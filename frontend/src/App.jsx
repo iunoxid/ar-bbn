@@ -351,6 +351,22 @@ export default function App() {
   return (
     <div className="page">
       <div className="background" />
+      {loading ? (
+        <div
+          className="loading-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-live="polite"
+        >
+          <div className="loading-card">
+            <span className="loading-spinner" aria-hidden="true" />
+            <div className="loading-text">
+              <strong>Sedang menghitung</strong>
+              <span>Mohon ditunggu, proses bisa memakan waktu.</span>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <main className="container">
         <header className="hero">
           <p className="badge">Invoice Matcher</p>

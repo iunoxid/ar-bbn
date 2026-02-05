@@ -45,6 +45,51 @@ body {
   z-index: 0;
 }
 
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.35);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: 24px;
+}
+
+.loading-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  background: #fffdf7;
+  box-shadow: var(--shadow);
+  min-width: min(440px, 90vw);
+}
+
+.loading-text {
+  display: grid;
+  gap: 4px;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.loading-text strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.loading-spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid rgba(47, 111, 237, 0.25);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
 .container {
   position: relative;
   z-index: 1;
